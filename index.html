@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>긴급 구조 요청</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#111;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container{
+    text-align:center;
+}
+
+button{
+    width:220px;
+    height:220px;
+    border:none;
+    border-radius:50%;
+    background:red;
+    color:white;
+    font-size:32px;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 0 30px red;
+}
+
+button:active{
+    transform:scale(0.95);
+}
+
+#status{
+    margin-top:30px;
+    font-size:20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <button onclick="sendSOS()">SOS</button>
+    <div id="status">버튼을 누르면 위치가 전송됩니다.</div>
+</div>
+
+<script>
+
+function playAlarm(){
+
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+
+    osc.type="square";
+    osc.frequency.value=900;
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    gain.gain.value=0.3;
+
+    osc.start();
+
+    setTimeout(()=>{
+        osc.stop();
+    },3000);
+
+}
+
+function sendSOS(){
+
+    document.getElementById("status").innerHTML="위치 확인 중...";
+
+    playAlarm();
+
+    if(navigator.geolocation){
+
+        navigator.geolocation.getCurrentPosition(function(position){
+
+            const lat=position.coords.latitude;
+            const lon=position.coords.longitude;
+
+            const locationURL=
+            `https://www.google.com/maps?q=${lat},${lon}`;
+
+            document.getElementById("status").innerHTML=
+            "신호 전송 완료<br>"+locationURL;
+
+            // 서버로 보내기
+            fetch("https://YOUR_SERVER_URL/sos",{
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json"
+                },
+
+                body:JSON.stringify({
+
+                    latitude:lat,
+                    longitude:lon,
+                    map:locationURL,
+                    time:new Date()
+
+                })
+
+            });
+
+        },
+
+        function(){
+
+            document.getElementById("status").innerHTML="위치를 가져올 수 없습니다.";
+
+        });
+
+    }else{
+
+        document.getElementById("status").innerHTML="GPS를 지원하지 않습니다.";
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
