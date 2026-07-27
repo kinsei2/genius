@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marine SOS</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow:hidden;
+    font-family:'Pretendard',sans-serif;
+    background:linear-gradient(to bottom,
+        #87CEEB 0%,
+        #BEEBFF 35%,
+        #6FCBFF 60%,
+        #2D9CDB 100%);
+}
+
+/* 물결 */
+.wave{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:200%;
+    height:180px;
+    background:
+    radial-gradient(circle at 50% 0,
+    rgba(255,255,255,.45) 22px,
+    transparent 23px);
+    background-size:120px 60px;
+    animation:waveMove 10s linear infinite;
+}
+
+.wave2{
+    bottom:15px;
+    opacity:.4;
+    animation-duration:16s;
+}
+
+@keyframes waveMove{
+    from{transform:translateX(0);}
+    to{transform:translateX(-120px);}
+}
+
+.container{
+    position:relative;
+    z-index:10;
+    text-align:center;
+    background:rgba(255,255,255,.18);
+    backdrop-filter:blur(12px);
+    padding:45px;
+    border-radius:30px;
+    box-shadow:0 15px 40px rgba(0,0,0,.15);
+}
+
+h1{
+    font-size:42px;
+    color:white;
+    margin-bottom:15px;
+    text-shadow:0 3px 10px rgba(0,0,0,.2);
+}
+
+.subtitle{
+    color:white;
+    font-size:18px;
+    line-height:1.8;
+    margin-bottom:35px;
+}
+
+button{
+    width:190px;
+    height:190px;
+    border-radius:50%;
+    border:18px solid #FF9F43;
+    background:white;
+    color:#1976D2;
+    font-size:38px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.3s;
+    box-shadow:0 10px 25px rgba(0,0,0,.2);
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+button:active{
+    transform:scale(.97);
+    background:#FF9F43;
+    color:white;
+}
+
+#status{
+    margin-top:35px;
+    display:inline-block;
+    background:rgba(255,255,255,.2);
+    color:white;
+    padding:12px 25px;
+    border-radius:20px;
+    font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wave"></div>
+<div class="wave wave2"></div>
+
+<div class="container">
+
+    <h1>🌊 Marine SOS</h1>
+
+    <p class="subtitle">
+        위급한 상황에서는 SOS 버튼을 눌러<br>
+        현재 위치와 구조 요청을 즉시 전송하세요.
+    </p>
+
+    <button onclick="sendSOS()">SOS</button>
+
+    <div id="status">
+        📍 구조 요청 대기 중
+    </div>
+
+</div>
+
+<script>
+
+function playAlarm(){
+
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+
+    osc.type="square";
+    osc.frequency.value=900;
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    gain.gain.value=0.25;
+
+    osc.start();
+
+    setTimeout(()=>{
+        osc.stop();
+    },3000);
+}
+
+function sendSOS(){
+
+    document.getElementById("status").innerHTML=
+    "📡 현재 위치를 확인하는 중...";
+
+    playAlarm();
+
+    if(navigator.geolocation){
+
+        navigator.geolocation.getCurrentPosition(function(position){
+
+            const lat=position.coords.latitude;
+            const lon=position.coords.longitude;
+
+            const map=
+            `https://www.google.com/maps?q=${lat},${lon}`;
+
+            document.getElementById("status").innerHTML=
+            "✅ 구조 요청과 현재 위치를 전송했습니다.";
+
+            // 실제 서버 주소로 변경
+            fetch("https://YOUR_SERVER_URL/sos",{
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json"
+                },
+
+                body:JSON.stringify({
+
+                    latitude:lat,
+                    longitude:lon,
+                    map:map,
+                    time:new Date()
+
+                })
+
+            });
+
+        },
+
+        function(){
+
+            document.getElementById("status").innerHTML=
+            "⚠️ 위치를 확인할 수 없습니다.";
+
+        });
+
+    }else{
+
+        document.getElementById("status").innerHTML=
+        "⚠️ GPS를 지원하지 않는 기기입니다.";
+
+    }
+
+}
+
+</script>
+
+</body>
